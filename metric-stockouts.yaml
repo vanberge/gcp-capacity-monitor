@@ -1,0 +1,8 @@
+description: "Universal metric tracking GKE/GCE instance stockouts during node provisioning"
+filter: |
+  (resource.type="k8s_pod" AND logName : "events" AND jsonPayload.reason="FailedScaleUp" AND jsonPayload.message=~"GCE out of resources")
+  OR
+  (logName : "cloudaudit.googleapis.com%2Factivity" AND protoPayload.methodName:"compute.instances.insert" AND severity="ERROR" AND (protoPayload.status.message="ZONE_RESOURCE_POOL_EXHAUSTED" OR protoPayload.status.details.value.errorInfo.reason="stockout"))
+metricDescriptor:
+  metricKind: DELTA
+  valueType: INT64

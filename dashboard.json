@@ -1,0 +1,164 @@
+{
+  "displayName": "GKE ComputeClass: Universal Stockouts & Fallback Operations",
+  "mosaicLayout": {
+    "columns": 12,
+    "tiles": [
+      {
+        "width": 12,
+        "height": 2,
+        "xPos": 0,
+        "yPos": 0,
+        "widget": {
+          "title": "Universal Multi-Cluster Overview",
+          "text": {
+            "content": "### Universal GKE ComputeClass & Stockout Monitoring\nThis dashboard is **project-wide and multi-cluster**. It tracks **stockouts** of preferred primary instance types and **successful provisionings broken down by machine family** (`N4`, `N2`, `N2D`, `T2D`, `C3D`, `E2`, etc.) across any GKE cluster in the project.\n\n* **Multi-Cluster**: Automatically monitors all GKE clusters in this project.\n* **Time Window**: Use the time picker in the top right (**1H**, **6H**, **1D**, **7D**) to view live or historical trends.",
+            "format": "MARKDOWN"
+          }
+        }
+      },
+      {
+        "width": 6,
+        "height": 4,
+        "xPos": 0,
+        "yPos": 2,
+        "widget": {
+          "title": "Instance Stockouts (GCE Pool Exhausted / FailedScaleUp)",
+          "xyChart": {
+            "chartOptions": {
+              "mode": "COLOR"
+            },
+            "dataSets": [
+              {
+                "legendTemplate": "Stockouts (${resource.labels.zone})",
+                "minAlignmentPeriod": "60s",
+                "plotType": "LINE",
+                "targetAxis": "Y1",
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"logging.googleapis.com/user/gke_node_provisioning_stockouts\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_DELTA",
+                      "groupByFields": [
+                        "resource.labels.zone"
+                      ]
+                    }
+                  }
+                }
+              }
+            ],
+            "yAxis": {
+              "label": "Stockout Count",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "width": 6,
+        "height": 4,
+        "xPos": 6,
+        "yPos": 2,
+        "widget": {
+          "title": "Node Provisioning Successes by Machine Family",
+          "xyChart": {
+            "chartOptions": {
+              "mode": "COLOR"
+            },
+            "dataSets": [
+              {
+                "legendTemplate": "Machine Family: ${metric.labels.machine_family}",
+                "minAlignmentPeriod": "60s",
+                "plotType": "LINE",
+                "targetAxis": "Y1",
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"logging.googleapis.com/user/gke_node_provisioning_successes\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_DELTA",
+                      "groupByFields": [
+                        "metric.labels.machine_family"
+                      ]
+                    }
+                  }
+                }
+              }
+            ],
+            "yAxis": {
+              "label": "Instances Created",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "width": 12,
+        "height": 4,
+        "xPos": 0,
+        "yPos": 6,
+        "widget": {
+          "title": "Comparative Trend: Stockouts vs Node Provisionings",
+          "xyChart": {
+            "chartOptions": {
+              "mode": "COLOR"
+            },
+            "dataSets": [
+              {
+                "legendTemplate": "Stockouts (Total)",
+                "minAlignmentPeriod": "60s",
+                "plotType": "LINE",
+                "targetAxis": "Y1",
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"logging.googleapis.com/user/gke_node_provisioning_stockouts\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_DELTA"
+                    }
+                  }
+                }
+              },
+              {
+                "legendTemplate": "Successful Nodes (${metric.labels.machine_family})",
+                "minAlignmentPeriod": "60s",
+                "plotType": "LINE",
+                "targetAxis": "Y1",
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "metric.type=\"logging.googleapis.com/user/gke_node_provisioning_successes\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "groupByFields": [
+                        "metric.labels.machine_family"
+                      ]
+                    }
+                  }
+                }
+              }
+            ],
+            "yAxis": {
+              "label": "Event Count",
+              "scale": "LINEAR"
+            }
+          }
+        }
+      },
+      {
+        "width": 12,
+        "height": 8,
+        "xPos": 0,
+        "yPos": 10,
+        "widget": {
+          "title": "Details Pane: Raw Autoscaler & Provisioning Activity Logs",
+          "logsPanel": {
+            "filter": "(resource.type=\"k8s_pod\" AND logName : \"events\" AND jsonPayload.reportingComponent=\"cluster-autoscaler\") OR (logName : \"cloudaudit.googleapis.com%2Factivity\" AND protoPayload.methodName:\"compute.instances.insert\" AND (severity=\"ERROR\" OR protoPayload.resourceName=~\"-nap-\"))",
+            "resourceNames": [
+              "projects/${PROJECT_ID}"
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

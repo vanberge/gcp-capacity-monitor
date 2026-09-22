@@ -1,0 +1,16 @@
+description: "Universal metric tracking successful auto-provisioned GKE nodes across all clusters, labeled by machine family"
+filter: |
+  logName : "cloudaudit.googleapis.com%2Factivity"
+  protoPayload.methodName:"compute.instances.insert"
+  operation.last=true
+  NOT severity="ERROR"
+  protoPayload.resourceName=~"-nap-[a-z0-9]+-"
+metricDescriptor:
+  metricKind: DELTA
+  valueType: INT64
+  labels:
+  - key: machine_family
+    valueType: STRING
+    description: "Machine family (e.g. n2, e2, n4, n2d, c3d, t2d)"
+labelExtractors:
+  machine_family: "REGEXP_EXTRACT(protoPayload.resourceName, \".*-nap-([a-z0-9]+)-.*\")"
