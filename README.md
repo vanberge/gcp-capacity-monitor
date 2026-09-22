@@ -1,6 +1,6 @@
-# Universal GKE ComputeClass & Stockout Monitoring Dashboard
+# GKE ComputeClass & Stockout Monitoring Dashboard
 
-A project-wide, cluster-agnostic Google Cloud Operations monitoring package that tracks:
+This operations dashboard package will enable tracking of:
 1. **Compute Engine / GKE Instance Stockouts** (`FailedScaleUp: GCE out of resources`, `ZONE_RESOURCE_POOL_EXHAUSTED`, `stockout`).
 2. **Auto-Provisioned Nodes Broken Down by Machine Family** (`n4`, `n2`, `e2`, `n2d`, `t2d`, `c3d`, etc.).
 3. **Comparative Trends** (Stockouts vs Successful Node Creations).
@@ -9,7 +9,7 @@ A project-wide, cluster-agnostic Google Cloud Operations monitoring package that
 
 ---
 
-## Why This Works Across Any Cluster & Any Machine Family
+## How this is enabled 
 
 - **Dynamic Machine Family Extraction**:  
   The metric `gke_node_provisioning_successes` extracts `machine_family` dynamically using a regular expression (`.*-nap-([a-z0-9]+)-.*`) from Google Cloud audit logs. Whether a cluster uses `N4` with `AMD` fallbacks, or `N2` with `E2` fallbacks, the dashboard plots separate trend lines for each machine family automatically.
@@ -43,7 +43,7 @@ A project-wide, cluster-agnostic Google Cloud Operations monitoring package that
 Clone the repository and run:
 
 ```bash
-git clone <YOUR_REPO_URL>
+git clone <THIS_REPO_URL>
 cd gke-computeclass-monitoring
 ./deploy.sh [TARGET_PROJECT_ID]
 ```
