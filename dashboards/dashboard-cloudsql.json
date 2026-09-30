@@ -1,5 +1,5 @@
 {
-  "displayName": "GCE Capacity: Compute Engine Instance Stockouts & Provisioning",
+  "displayName": "Cloud SQL Capacity: Database Stockouts & Provisioning",
   "mosaicLayout": {
     "columns": 12,
     "tiles": [
@@ -9,9 +9,9 @@
         "xPos": 0,
         "yPos": 0,
         "widget": {
-          "title": "Compute Engine Capacity Overview",
+          "title": "Cloud SQL Database Capacity Overview",
           "text": {
-            "content": "### Compute Engine (GCE) Capacity & Stockout Monitoring\nThis dashboard tracks **stockouts** (`ZONE_RESOURCE_POOL_EXHAUSTED`) and **successful provisionings** for regular Google Compute Engine standalone VMs and Managed Instance Groups (MIGs) in project `${PROJECT_ID}` (excluding GKE nodes).\n\n* **Operations Tracked**: Covers both new VM creations (`compute.instances.insert`) and starting stopped instances (`compute.instances.start`).\n* **Zonal Analysis**: Highlights which zones and machine families are experiencing resource pool exhaustions.\n* **Time Window**: Use the time picker in the top right (**1H**, **6H**, **1D**, **7D**) to view live or historical trends.",
+            "content": "### Cloud SQL Database Capacity & Stockout Monitoring\nThis dashboard tracks **capacity stockouts** and **successful provisionings** for Cloud SQL instances (PostgreSQL, MySQL, SQL Server) in project `${PROJECT_ID}`.\n\n* **Operations Tracked**: Covers new database creations (`create`), machine tier resizing/scaling (`update`), restarts, and High Availability failovers.\n* **Regional Breakdown**: Highlights which regions or zones are encountering underlying compute hardware exhaustion for database tiers.\n* **Time Window**: Use the time picker in the top right (**1H**, **6H**, **1D**, **7D**) to view live or historical trends.",
             "format": "MARKDOWN"
           }
         }
@@ -22,25 +22,25 @@
         "xPos": 0,
         "yPos": 2,
         "widget": {
-          "title": "GCE Instance Stockouts by Zone",
+          "title": "Cloud SQL Database Stockouts by Region",
           "xyChart": {
             "chartOptions": {
               "mode": "COLOR"
             },
             "dataSets": [
               {
-                "legendTemplate": "Stockouts (${metric.labels.zone})",
+                "legendTemplate": "Stockouts (${metric.labels.region})",
                 "minAlignmentPeriod": "60s",
                 "plotType": "LINE",
                 "targetAxis": "Y1",
                 "timeSeriesQuery": {
                   "timeSeriesFilter": {
-                    "filter": "metric.type=\"logging.googleapis.com/user/gce_instance_stockouts\"",
+                    "filter": "metric.type=\"logging.googleapis.com/user/cloudsql_instance_stockouts\"",
                     "aggregation": {
                       "alignmentPeriod": "60s",
                       "perSeriesAligner": "ALIGN_DELTA",
                       "groupByFields": [
-                        "metric.labels.zone"
+                        "metric.labels.region"
                       ]
                     }
                   }
@@ -60,7 +60,7 @@
         "xPos": 6,
         "yPos": 2,
         "widget": {
-          "title": "GCE Stockouts by Operation (Insert vs Start)",
+          "title": "Cloud SQL Stockouts by Operation (Create, Update, Failover)",
           "xyChart": {
             "chartOptions": {
               "mode": "COLOR"
@@ -73,7 +73,7 @@
                 "targetAxis": "Y1",
                 "timeSeriesQuery": {
                   "timeSeriesFilter": {
-                    "filter": "metric.type=\"logging.googleapis.com/user/gce_instance_stockouts\"",
+                    "filter": "metric.type=\"logging.googleapis.com/user/cloudsql_instance_stockouts\"",
                     "aggregation": {
                       "alignmentPeriod": "60s",
                       "perSeriesAligner": "ALIGN_DELTA",
@@ -98,25 +98,25 @@
         "xPos": 0,
         "yPos": 6,
         "widget": {
-          "title": "Successful GCE Instance Provisionings by Zone",
+          "title": "Successful Cloud SQL Provisionings & Resizes by Region",
           "xyChart": {
             "chartOptions": {
               "mode": "COLOR"
             },
             "dataSets": [
               {
-                "legendTemplate": "Created in ${metric.labels.zone}",
+                "legendTemplate": "Created/Updated (${metric.labels.region})",
                 "minAlignmentPeriod": "60s",
                 "plotType": "LINE",
                 "targetAxis": "Y1",
                 "timeSeriesQuery": {
                   "timeSeriesFilter": {
-                    "filter": "metric.type=\"logging.googleapis.com/user/gce_instance_provisioning_successes\"",
+                    "filter": "metric.type=\"logging.googleapis.com/user/cloudsql_instance_provisioning_successes\"",
                     "aggregation": {
                       "alignmentPeriod": "60s",
                       "perSeriesAligner": "ALIGN_DELTA",
                       "groupByFields": [
-                        "metric.labels.zone"
+                        "metric.labels.region"
                       ]
                     }
                   }
@@ -124,7 +124,7 @@
               }
             ],
             "yAxis": {
-              "label": "Instances Created",
+              "label": "Instances Created/Updated",
               "scale": "LINEAR"
             }
           }
@@ -136,20 +136,20 @@
         "xPos": 6,
         "yPos": 6,
         "widget": {
-          "title": "Comparative Trend: GCE Stockouts vs Successful Provisionings",
+          "title": "Comparative Trend: Cloud SQL Stockouts vs Successes",
           "xyChart": {
             "chartOptions": {
               "mode": "COLOR"
             },
             "dataSets": [
               {
-                "legendTemplate": "GCE Stockouts",
+                "legendTemplate": "Cloud SQL Stockouts",
                 "minAlignmentPeriod": "60s",
                 "plotType": "LINE",
                 "targetAxis": "Y1",
                 "timeSeriesQuery": {
                   "timeSeriesFilter": {
-                    "filter": "metric.type=\"logging.googleapis.com/user/gce_instance_stockouts\"",
+                    "filter": "metric.type=\"logging.googleapis.com/user/cloudsql_instance_stockouts\"",
                     "aggregation": {
                       "alignmentPeriod": "60s",
                       "perSeriesAligner": "ALIGN_DELTA"
@@ -158,13 +158,13 @@
                 }
               },
               {
-                "legendTemplate": "Successful GCE Provisionings",
+                "legendTemplate": "Successful Creations & Resizes",
                 "minAlignmentPeriod": "60s",
                 "plotType": "LINE",
                 "targetAxis": "Y1",
                 "timeSeriesQuery": {
                   "timeSeriesFilter": {
-                    "filter": "metric.type=\"logging.googleapis.com/user/gce_instance_provisioning_successes\"",
+                    "filter": "metric.type=\"logging.googleapis.com/user/cloudsql_instance_provisioning_successes\"",
                     "aggregation": {
                       "alignmentPeriod": "60s",
                       "perSeriesAligner": "ALIGN_DELTA"
@@ -186,9 +186,9 @@
         "xPos": 0,
         "yPos": 10,
         "widget": {
-          "title": "Details Pane: Raw Compute Engine Provisioning & Start Errors",
+          "title": "Details Pane: Raw Cloud SQL Stockout & Allocation Errors",
           "logsPanel": {
-            "filter": "logName : \"cloudaudit.googleapis.com%2Factivity\" AND (protoPayload.methodName:\"compute.instances.insert\" OR protoPayload.methodName:\"compute.instances.start\") AND severity=\"ERROR\" AND (protoPayload.status.message=\"ZONE_RESOURCE_POOL_EXHAUSTED\" OR protoPayload.status.message=~\"does not have enough resources available\" OR protoPayload.status.details.value.errorInfo.reason=\"stockout\" OR protoPayload.status.details.value.errorInfo.reason=\"ZONE_RESOURCE_POOL_EXHAUSTED\") AND NOT protoPayload.resourceName=~\"/instances/gke-\" AND NOT protoPayload.resourceName=~\"-nap-\"",
+            "filter": "resource.type=\"cloudsql_database\" AND logName : \"cloudaudit.googleapis.com%2Factivity\" AND (protoPayload.methodName:\"cloudsql.instances.create\" OR protoPayload.methodName:\"cloudsql.instances.update\" OR protoPayload.methodName:\"cloudsql.instances.restart\" OR protoPayload.methodName:\"cloudsql.instances.failover\" OR protoPayload.methodName:\"cloudsql.instances.clone\") AND severity=\"ERROR\" AND (protoPayload.status.code=111 OR protoPayload.status.code=8 OR protoPayload.status.message=~\"(ZONE_RESOURCE_POOL_EXHAUSTED|resource pool exhausted|insufficient capacity|does not have enough resources available|The zone is currently out of capacity|stockout)\" OR protoPayload.status.details.value.errorInfo.reason=~\"(stockout|ZONE_RESOURCE_POOL_EXHAUSTED)\")",
             "resourceNames": [
               "projects/${PROJECT_ID}"
             ]
