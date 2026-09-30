@@ -1,0 +1,11 @@
+# Temporary / scratch files
+*.tmp
+*.bak
+*.swp
+*applied*.json
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl

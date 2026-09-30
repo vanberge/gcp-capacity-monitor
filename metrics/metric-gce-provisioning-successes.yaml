@@ -1,0 +1,17 @@
+description: "Metric tracking successful regular Compute Engine (GCE) instance creations (excluding GKE nodes)"
+filter: |
+  logName : "cloudaudit.googleapis.com%2Factivity"
+  AND protoPayload.methodName:"compute.instances.insert"
+  AND operation.last=true
+  AND NOT severity="ERROR"
+  AND NOT protoPayload.resourceName=~"/instances/gke-"
+  AND NOT protoPayload.resourceName=~"-nap-"
+metricDescriptor:
+  metricKind: DELTA
+  valueType: INT64
+  labels:
+  - key: zone
+    valueType: STRING
+    description: "Zone where the instance was created"
+labelExtractors:
+  zone: "EXTRACT(resource.labels.zone)"

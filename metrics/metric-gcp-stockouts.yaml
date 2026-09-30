@@ -1,0 +1,16 @@
+description: "Universal metric tracking all GCP capacity stockouts across GKE, Compute Engine (GCE), and Cloud SQL"
+filter: |
+  (resource.type="k8s_pod" AND logName : "events" AND jsonPayload.reason="FailedScaleUp" AND jsonPayload.message=~"GCE out of resources")
+  OR
+  (logName : "cloudaudit.googleapis.com%2Factivity" AND (protoPayload.methodName:"compute.instances.insert" OR protoPayload.methodName:"compute.instances.start") AND severity="ERROR" AND (protoPayload.status.message="ZONE_RESOURCE_POOL_EXHAUSTED" OR protoPayload.status.message=~"does not have enough resources available" OR protoPayload.status.details.value.errorInfo.reason="stockout" OR protoPayload.status.details.value.errorInfo.reason="ZONE_RESOURCE_POOL_EXHAUSTED"))
+  OR
+  (resource.type="cloudsql_database" AND logName : "cloudaudit.googleapis.com%2Factivity" AND (protoPayload.methodName:"cloudsql.instances.create" OR protoPayload.methodName:"cloudsql.instances.update" OR protoPayload.methodName:"cloudsql.instances.restart" OR protoPayload.methodName:"cloudsql.instances.failover" OR protoPayload.methodName:"cloudsql.instances.clone") AND severity="ERROR" AND (protoPayload.status.code=111 OR protoPayload.status.code=8 OR protoPayload.status.message=~"(ZONE_RESOURCE_POOL_EXHAUSTED|resource pool exhausted|insufficient capacity|does not have enough resources available|The zone is currently out of capacity|stockout)" OR protoPayload.status.details.value.errorInfo.reason=~"(stockout|ZONE_RESOURCE_POOL_EXHAUSTED)"))
+metricDescriptor:
+  metricKind: DELTA
+  valueType: INT64
+  labels:
+  - key: service_name
+    valueType: STRING
+    description: "Service name (compute.googleapis.com, cloudsql.googleapis.com, or k8s.io)"
+labelExtractors:
+  service_name: "REGEXP_EXTRACT(protoPayload.serviceName, \"([a-z0-9.]+)\")"

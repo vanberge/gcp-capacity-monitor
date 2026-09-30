@@ -1,0 +1,24 @@
+description: "Metric tracking Cloud SQL database instance stockouts during creation, resize, restart, or failover"
+filter: |
+  resource.type="cloudsql_database"
+  AND logName : "cloudaudit.googleapis.com%2Factivity"
+  AND (protoPayload.methodName:"cloudsql.instances.create" OR protoPayload.methodName:"cloudsql.instances.update" OR protoPayload.methodName:"cloudsql.instances.restart" OR protoPayload.methodName:"cloudsql.instances.failover" OR protoPayload.methodName:"cloudsql.instances.clone")
+  AND severity="ERROR"
+  AND (protoPayload.status.code=111 OR protoPayload.status.code=8 OR protoPayload.status.message=~"(ZONE_RESOURCE_POOL_EXHAUSTED|resource pool exhausted|insufficient capacity|does not have enough resources available|The zone is currently out of capacity|stockout)" OR protoPayload.status.details.value.errorInfo.reason=~"(stockout|ZONE_RESOURCE_POOL_EXHAUSTED)")
+metricDescriptor:
+  metricKind: DELTA
+  valueType: INT64
+  labels:
+  - key: region
+    valueType: STRING
+    description: "Region of the Cloud SQL instance"
+  - key: database_id
+    valueType: STRING
+    description: "Database instance ID"
+  - key: method
+    valueType: STRING
+    description: "Cloud SQL operation method"
+labelExtractors:
+  region: "EXTRACT(resource.labels.region)"
+  database_id: "EXTRACT(resource.labels.database_id)"
+  method: "REGEXP_EXTRACT(protoPayload.methodName, \".*\\.(create|update|restart|failover|clone)\")"

@@ -1,0 +1,21 @@
+description: "Metric tracking regular Compute Engine (GCE) instance stockouts during creation and starts (excluding GKE nodes)"
+filter: |
+  logName : "cloudaudit.googleapis.com%2Factivity"
+  AND (protoPayload.methodName:"compute.instances.insert" OR protoPayload.methodName:"compute.instances.start")
+  AND severity="ERROR"
+  AND (protoPayload.status.message="ZONE_RESOURCE_POOL_EXHAUSTED" OR protoPayload.status.message=~"does not have enough resources available" OR protoPayload.status.details.value.errorInfo.reason="stockout" OR protoPayload.status.details.value.errorInfo.reason="ZONE_RESOURCE_POOL_EXHAUSTED")
+  AND NOT protoPayload.resourceName=~"/instances/gke-"
+  AND NOT protoPayload.resourceName=~"-nap-"
+metricDescriptor:
+  metricKind: DELTA
+  valueType: INT64
+  labels:
+  - key: zone
+    valueType: STRING
+    description: "Zone where the stockout occurred"
+  - key: method
+    valueType: STRING
+    description: "Method: insert or start"
+labelExtractors:
+  zone: "EXTRACT(resource.labels.zone)"
+  method: "REGEXP_EXTRACT(protoPayload.methodName, \".*\\.(insert|start)\")"

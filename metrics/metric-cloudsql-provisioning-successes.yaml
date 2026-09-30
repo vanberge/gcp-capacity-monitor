@@ -1,0 +1,24 @@
+description: "Metric tracking successful Cloud SQL database creations and tier updates"
+filter: |
+  resource.type="cloudsql_database"
+  AND logName : "cloudaudit.googleapis.com%2Factivity"
+  AND (protoPayload.methodName:"cloudsql.instances.create" OR protoPayload.methodName:"cloudsql.instances.update")
+  AND operation.last=true
+  AND NOT severity="ERROR"
+metricDescriptor:
+  metricKind: DELTA
+  valueType: INT64
+  labels:
+  - key: region
+    valueType: STRING
+    description: "Region of the Cloud SQL instance"
+  - key: database_id
+    valueType: STRING
+    description: "Database instance ID"
+  - key: method
+    valueType: STRING
+    description: "Operation method: create or update"
+labelExtractors:
+  region: "EXTRACT(resource.labels.region)"
+  database_id: "EXTRACT(resource.labels.database_id)"
+  method: "REGEXP_EXTRACT(protoPayload.methodName, \".*\\.(create|update)\")"
