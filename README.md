@@ -1,3 +1,7 @@
+# Disclaimer
+
+This tooling is provided without any warranty, make sure you review code and test accordingly with your requirements.
+
 # GKE ComputeClass & Stockout Monitoring Dashboard
 
 This operations dashboard package will enable tracking of:
