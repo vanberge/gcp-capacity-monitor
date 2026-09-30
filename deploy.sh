@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Deploy GKE ComputeClass Universal Monitoring Dashboard & Metrics
+# Deploy GCP Multi-Service Capacity & Stockout Monitoring (GCE, GKE, Cloud SQL)
 # Usage: ./deploy.sh [TARGET_PROJECT_ID]
 # ==============================================================================
 set -euo pipefail
@@ -13,48 +13,82 @@ if [ -z "${TARGET_PROJECT}" ]; then
   exit 1
 fi
 
-echo "==> Deploying to Project: ${TARGET_PROJECT}"
+echo "=============================================================================="
+echo " Deploying GCP Capacity & Stockout Monitoring to Project: ${TARGET_PROJECT}"
+echo " Services covered: GKE (Kubernetes), GCE (Compute Engine), Cloud SQL (Databases)"
+echo "=============================================================================="
 
 export CLOUDSDK_METRICS_ENVIRONMENT="${CLOUDSDK_METRICS_ENVIRONMENT:+$CLOUDSDK_METRICS_ENVIRONMENT }datacloud.antigravity"
 
-# 1. Create Universal Stockout Metric
-echo "==> 1/3 Creating/Updating log metric: gke_node_provisioning_stockouts..."
-if gcloud logging metrics describe gke_node_provisioning_stockouts --project="${TARGET_PROJECT}" >/dev/null 2>&1; then
-  gcloud logging metrics update gke_node_provisioning_stockouts \
-    --config-from-file="${SCRIPT_DIR}/metric-stockouts.yaml" \
-    --project="${TARGET_PROJECT}"
-else
-  gcloud logging metrics create gke_node_provisioning_stockouts \
-    --config-from-file="${SCRIPT_DIR}/metric-stockouts.yaml" \
-    --project="${TARGET_PROJECT}"
-fi
+# Helper function to deploy/update a log metric
+deploy_metric() {
+  local metric_name="$1"
+  local config_file="$2"
+  echo "--> Metric: ${metric_name}..."
+  if gcloud logging metrics describe "${metric_name}" --project="${TARGET_PROJECT}" >/dev/null 2>&1; then
+    gcloud logging metrics update "${metric_name}" \
+      --config-from-file="${config_file}" \
+      --project="${TARGET_PROJECT}" >/dev/null
+    echo "    ✓ Updated existing metric"
+  else
+    gcloud logging metrics create "${metric_name}" \
+      --config-from-file="${config_file}" \
+      --project="${TARGET_PROJECT}" >/dev/null
+    echo "    ✓ Created new metric"
+  fi
+}
 
-# 2. Create Universal Machine Family Successes Metric
-echo "==> 2/3 Creating/Updating log metric: gke_node_provisioning_successes..."
-if gcloud logging metrics describe gke_node_provisioning_successes --project="${TARGET_PROJECT}" >/dev/null 2>&1; then
-  gcloud logging metrics update gke_node_provisioning_successes \
-    --config-from-file="${SCRIPT_DIR}/metric-provisioning-successes.yaml" \
-    --project="${TARGET_PROJECT}"
-else
-  gcloud logging metrics create gke_node_provisioning_successes \
-    --config-from-file="${SCRIPT_DIR}/metric-provisioning-successes.yaml" \
-    --project="${TARGET_PROJECT}"
-fi
+# Helper function to deploy a monitoring dashboard
+deploy_dashboard() {
+  local title="$1"
+  local json_file="$2"
+  echo "--> Dashboard: ${title}..." >&2
+  local tmp_json
+  tmp_json=$(mktemp)
+  sed "s/\${PROJECT_ID}/${TARGET_PROJECT}/g" "${json_file}" > "${tmp_json}"
 
-# 3. Create Monitoring Dashboard
-echo "==> 3/3 Deploying Cloud Monitoring Dashboard..."
-TMP_DASH_JSON=$(mktemp)
-sed "s/\${PROJECT_ID}/${TARGET_PROJECT}/g" "${SCRIPT_DIR}/dashboard.json" > "${TMP_DASH_JSON}"
+  local dashboard_id
+  dashboard_id=$(gcloud monitoring dashboards create \
+    --config-from-file="${tmp_json}" \
+    --project="${TARGET_PROJECT}" \
+    --format="value(name)")
+  rm -f "${tmp_json}"
+  local clean_id="${dashboard_id##*/}"
+  echo "    ✓ Deployed (${clean_id})" >&2
+  echo "${clean_id}"
+}
 
-DASHBOARD_ID=$(gcloud monitoring dashboards create \
-  --config-from-file="${TMP_DASH_JSON}" \
-  --project="${TARGET_PROJECT}" \
-  --format="value(name)")
-rm -f "${TMP_DASH_JSON}"
+echo ""
+echo "[Step 1/2] Creating/Updating Log-Based Capacity Metrics..."
+deploy_metric "gcp_capacity_stockouts" "${SCRIPT_DIR}/metrics/metric-gcp-stockouts.yaml"
+deploy_metric "gke_node_provisioning_stockouts" "${SCRIPT_DIR}/metrics/metric-gke-stockouts.yaml"
+deploy_metric "gke_node_provisioning_successes" "${SCRIPT_DIR}/metrics/metric-gke-provisioning-successes.yaml"
+deploy_metric "gce_instance_stockouts" "${SCRIPT_DIR}/metrics/metric-gce-stockouts.yaml"
+deploy_metric "gce_instance_provisioning_successes" "${SCRIPT_DIR}/metrics/metric-gce-provisioning-successes.yaml"
+deploy_metric "cloudsql_instance_stockouts" "${SCRIPT_DIR}/metrics/metric-cloudsql-stockouts.yaml"
+deploy_metric "cloudsql_instance_provisioning_successes" "${SCRIPT_DIR}/metrics/metric-cloudsql-provisioning-successes.yaml"
+
+echo ""
+echo "[Step 2/2] Deploying Cloud Monitoring Dashboards..."
+OVERVIEW_ID=$(deploy_dashboard "Executive Overview" "${SCRIPT_DIR}/dashboards/dashboard-overview.json")
+GKE_ID=$(deploy_dashboard "GKE Capacity & Stockouts" "${SCRIPT_DIR}/dashboards/dashboard-gke.json")
+GCE_ID=$(deploy_dashboard "GCE Capacity & Stockouts" "${SCRIPT_DIR}/dashboards/dashboard-gce.json")
+CLOUDSQL_ID=$(deploy_dashboard "Cloud SQL Capacity & Stockouts" "${SCRIPT_DIR}/dashboards/dashboard-cloudsql.json")
 
 echo ""
 echo "=============================================================================="
-echo " SUCCESS! Dashboard deployed."
-echo " Dashboard Resource: ${DASHBOARD_ID}"
-echo " Console Link: https://console.cloud.google.com/monitoring/dashboards/builder/${DASHBOARD_ID##*/}?project=${TARGET_PROJECT}"
+echo " SUCCESS! All Log Metrics & Custom Dashboards Deployed Successfully."
+echo " Project: ${TARGET_PROJECT}"
+echo "------------------------------------------------------------------------------"
+echo " 1. Executive Roll-Up Dashboard:"
+echo "    https://console.cloud.google.com/monitoring/dashboards/builder/${OVERVIEW_ID}?project=${TARGET_PROJECT}"
+echo ""
+echo " 2. GKE Dedicated Dashboard:"
+echo "    https://console.cloud.google.com/monitoring/dashboards/builder/${GKE_ID}?project=${TARGET_PROJECT}"
+echo ""
+echo " 3. GCE Compute Engine Dedicated Dashboard:"
+echo "    https://console.cloud.google.com/monitoring/dashboards/builder/${GCE_ID}?project=${TARGET_PROJECT}"
+echo ""
+echo " 4. Cloud SQL Database Dedicated Dashboard:"
+echo "    https://console.cloud.google.com/monitoring/dashboards/builder/${CLOUDSQL_ID}?project=${TARGET_PROJECT}"
 echo "=============================================================================="
